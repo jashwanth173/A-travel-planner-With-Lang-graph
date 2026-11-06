@@ -1,183 +1,43 @@
-let currentThreadId = localStorage.getItem("travel_thread_id") || null;
-let latestAnswerMarkdown = "";
+const form = document.querySelector("#travel-form");
+const messageInput = document.querySelector("#message");
+const submitButton = document.querySelector("#submit-button");
+const statusMessage = document.querySelector("#status");
+const resultSection = document.querySelector("#result-section");
+const resultOutput = document.querySelector("#result");
 
-function setPrompt(text) {
-    document.getElementById("userInput").value = text;
-}
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-function setLoading(isLoading) {
-    const sendBtn = document.getElementById("sendBtn");
-    const btnText = document.getElementById("btnText");
-    const btnLoader = document.getElementById("btnLoader");
+  const message = messageInput.value.trim();
+  if (!message) {
+    messageInput.focus();
+    return;
+  }
 
-    sendBtn.disabled = isLoading;
+  submitButton.disabled = true;
+  statusMessage.dataset.error = "false";
+  statusMessage.textContent = "Planning your trip... This can take a little while.";
+  resultSection.hidden = true;
 
-    if (isLoading) {
-        btnText.classList.add("hidden");
-        btnLoader.classList.remove("hidden");
-    } else {
-        btnText.classList.remove("hidden");
-        btnLoader.classList.add("hidden");
-    }
-}
-
-function showError(message) {
-    const errorBox = document.getElementById("errorBox");
-
-    errorBox.textContent = message;
-    errorBox.classList.remove("hidden");
-}
-
-function hideError() {
-    const errorBox = document.getElementById("errorBox");
-
-    errorBox.classList.add("hidden");
-    errorBox.textContent = "";
-}
-
-function showResult(answer, threadId) {
-    latestAnswerMarkdown = answer;
-
-    const resultSection = document.getElementById("resultSection");
-    const resultBox = document.getElementById("resultBox");
-    const threadInfo = document.getElementById("threadInfo");
-
-    if (typeof marked !== "undefined") {
-        resultBox.innerHTML = marked.parse(answer);
-    } else {
-        resultBox.innerText = answer;
-    }
-
-    threadInfo.textContent = `Thread ID: ${threadId}`;
-
-    resultSection.classList.remove("hidden");
-
-    resultSection.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+  try {
+    const response = await fetch("/api/travel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
     });
-}
+    const data = await response.json();
 
-async function sendMessage() {
-    hideError();
-
-    const input = document.getElementById("userInput");
-    const message = input.value.trim();
-
-    if (!message) {
-        showError("Please enter your travel request first.");
-        return;
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || `Request failed (${response.status}).`);
     }
 
-    setLoading(true);
-
-    try {
-        const response = await fetch("/api/travel", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message,
-                thread_id: currentThreadId
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || "Something went wrong.");
-        }
-
-        currentThreadId = data.thread_id;
-        localStorage.setItem("travel_thread_id", currentThreadId);
-
-        showResult(data.answer, data.thread_id);
-
-    } catch (error) {
-        showError(error.message);
-    } finally {
-        setLoading(false);
-    }
-}
-
-function copyResult() {
-    const resultBox = document.getElementById("resultBox");
-    const text = resultBox.innerText;
-
-    if (!text) {
-        return;
-    }
-
-    navigator.clipboard.writeText(text)
-        .then(() => {
-            const copyBtn = document.querySelector(".copy-btn");
-            const oldText = copyBtn.textContent;
-
-            copyBtn.textContent = "Copied!";
-
-            setTimeout(() => {
-                copyBtn.textContent = oldText;
-            }, 1400);
-        })
-        .catch(() => {
-            showError("Could not copy result.");
-        });
-}
-
-function downloadPDF() {
-    const pdfContent = document.getElementById("pdfContent");
-
-    if (!latestAnswerMarkdown || !pdfContent) {
-        showError("No travel plan available to download.");
-        return;
-    }
-
-    const downloadBtn = document.querySelector(".download-btn");
-    const oldText = downloadBtn.textContent;
-
-    downloadBtn.textContent = "Preparing PDF...";
-    downloadBtn.disabled = true;
-
-    const options = {
-        margin: 0.5,
-        filename: "ai-travel-plan.pdf",
-        image: {
-            type: "jpeg",
-            quality: 0.98
-        },
-        html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff"
-        },
-        jsPDF: {
-            unit: "in",
-            format: "a4",
-            orientation: "portrait"
-        },
-        pagebreak: {
-            mode: ["avoid-all", "css", "legacy"]
-        }
-    };
-
-    html2pdf()
-        .set(options)
-        .from(pdfContent)
-        .save()
-        .then(() => {
-            downloadBtn.textContent = oldText;
-            downloadBtn.disabled = false;
-        })
-        .catch(() => {
-            downloadBtn.textContent = oldText;
-            downloadBtn.disabled = false;
-            showError("Could not download PDF.");
-        });
-}
-
-document.addEventListener("keydown", function(event) {
-    if (event.ctrlKey && event.key === "Enter") {
-        sendMessage();
-    }
+    resultOutput.innerHTML = data.answer_html;
+    resultSection.hidden = false;
+    statusMessage.textContent = "Your trip plan is ready.";
+  } catch (error) {
+    statusMessage.dataset.error = "true";
+    statusMessage.textContent = `Could not create your trip plan: ${error.message}`;
+  } finally {
+    submitButton.disabled = false;
+  }
 });
