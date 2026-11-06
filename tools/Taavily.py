@@ -1,24 +1,26 @@
-
-from tavily import TavilyClient
 import os
+
 from dotenv import load_dotenv
+from tavily import TavilyClient
 
 load_dotenv()
 
-client = TavilyClient(
-    api_key = os.getenv("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")
-)
 
-def tavily_search(query):
-    response = client.search()
-    query = qyery,
-    max_result = 5
-    result = []
-    for i in enumerate(response["results"],1):
-        title = r.get("title","unknown")
-        url = r.get("url","")
-        snippet = r.get("content","").strip()
-        if len(snippet)>300:
-            snippent = snippent[:300].rsplit(" ")[0] + "..."
-            results.append(f"|{i}.**{title}**\n  {url}\n {snippet}")
-            return "\n\n".join(results) 
+def tavily_search(query: str) -> str:
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        raise RuntimeError("Set TAVILY_API_KEY in your environment or .env file.")
+
+    client = TavilyClient(api_key=api_key)
+    response = client.search(query=query, max_results=5)
+    results = []
+
+    for index, result in enumerate(response["results"], start=1):
+        title = result.get("title", "unknown")
+        url = result.get("url", "")
+        snippet = result.get("content", "").strip()
+        if len(snippet) > 300:
+            snippet = snippet[:300].rsplit(" ", 1)[0] + "..."
+        results.append(f"{index}. **{title}**\n  {url}\n  {snippet}")
+
+    return "\n\n".join(results)

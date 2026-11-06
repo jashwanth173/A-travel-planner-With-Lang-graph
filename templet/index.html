@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>TripMate AI | Travel planner</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/scipt.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <header class="brand">
+      <div class="brand-mark" aria-hidden="true">T</div>
+      <span>TripMate <span class="brand-accent">AI</span></span>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">YOUR PERSONAL TRAVEL PLANNER</p>
+      <h1 id="page-title">Where would you like to go?</h1>
+      <p class="subtitle">Tell us about your trip and get a tailored plan with flight information, hotel ideas, and an itinerary.</p>
+    </section>
+
+    <section class="planner-card" aria-label="Create a travel plan">
+      <form id="travel-form">
+        <label for="message">Describe your trip</label>
+        <textarea id="message" name="message" rows="4" required placeholder="For example: Plan a 3-day trip to Tokyo from Bengaluru"></textarea>
+        <div class="form-footer">
+          <p class="hint">Include your destination, departure city, dates, or budget.</p>
+          <button id="submit-button" type="submit">
+            <span>Build my trip</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="result-section" class="result-card" aria-labelledby="result-title" hidden>
+      <div class="result-heading">
+        <div>
+          <p class="eyebrow">YOUR TRAVEL PLAN</p>
+          <h2 id="result-title">Trip details</h2>
+        </div>
+      </div>
+      <div id="result" class="result"></div>
+    </section>
+
+    <footer>Flight availability and hotel information may change. Confirm details before booking.</footer>
+  </main>
+</body>
+</html>
